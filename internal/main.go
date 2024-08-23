@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/nilshoeller/real-time-chat-application/internal/chat"
+	"github.com/nilshoeller/real-time-chat-application/internal/server"
 )
 
 func main() {
 	fmt.Println("Starting...")
 	
-	server := chat.NewServer()
-	chat.Run(server)
+	myServer := server.NewServer()
+	server.Run(myServer)
 }
