@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"fmt"
@@ -53,4 +53,9 @@ func (s *Server) Run() {
 	http.Handle("/ws", websocket.Handler(s.handleWS))
 	http.ListenAndServe(":3000", nil)
 
+}
+
+func main() {
+	myServer := NewServer()
+	myServer.Run()
 }

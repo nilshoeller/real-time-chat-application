@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"fmt"
@@ -49,4 +49,9 @@ func (c *Client) Run(){
 	}
 	fmt.Println("Received from server:", string(buff[:n]))
 
+}
+
+func main(){
+	newClient := NewClient("http://this-is-a-new-client:8000/", "ws://localhost:3000/ws")
+	newClient.Run()
 }
