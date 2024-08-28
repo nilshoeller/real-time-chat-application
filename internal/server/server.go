@@ -15,14 +15,14 @@ type Server struct {
 
 func NewServer() *Server {
 	return &Server{
-		connections:    make(map[*websocket.Conn]bool),
+		connections: make(map[*websocket.Conn]bool),
 	}
 }
 
-func (s *Server) handleWS(ws *websocket.Conn){
+func (s *Server) handleWS(ws *websocket.Conn) {
 	fmt.Println("new incoming connection from client:", ws.RemoteAddr())
 
-	// not concurrent save -> use mutex  
+	// not concurrent save -> use mutex
 	s.connections[ws] = true
 
 	s.readLoop(ws)
@@ -42,8 +42,8 @@ func (s *Server) readLoop(ws *websocket.Conn) {
 		}
 		msg := buff[:n]
 		fmt.Println(string(msg))
-
-		ws.Write([]byte("thank you for the message!"))
+		ws.Write([]byte(ws.RemoteAddr().String() + ": " + string(msg)))
+		// ws.Write([]byte("thank you for the message!"))
 	}
 }
 

@@ -32,7 +32,7 @@ func (c *Client) Connect() error {
 		return err
 	}
 
-	fmt.Println("Client connected to the server.")
+	// fmt.Println("Client connected to the server.")
 	return nil
 }
 
@@ -41,7 +41,7 @@ func (c *Client) SendMessage(message string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Message sent to the server:", message)
+	// fmt.Println("Message sent to the server:", message)
 	return nil
 }
 
@@ -146,7 +146,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					m.err = err
 				} else {
-					fmt.Println("Message received from server:", receivedMsg)
+					// fmt.Println("Message received from server:", receivedMsg)
+					fmt.Println(receivedMsg)
 				}
 
 				return m, tea.Quit
