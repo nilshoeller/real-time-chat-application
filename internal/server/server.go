@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,11 @@ import (
 type Server struct {
 	// Registered clients.
 	connections map[*websocket.Conn]bool
+}
+
+type MessageData struct {
+	ClientName string `json:"clientName"`
+	Message    string `json:"message"`
 }
 
 func NewServer() *Server {
@@ -29,8 +35,9 @@ func (s *Server) handleWS(ws *websocket.Conn) {
 }
 
 func (s *Server) readLoop(ws *websocket.Conn) {
-	buff := make([]byte, 1024)
 	for {
+		buff := make([]byte, 1024)
+
 		n, err := ws.Read(buff)
 		if err != nil {
 			if err == io.EOF {
@@ -41,9 +48,17 @@ func (s *Server) readLoop(ws *websocket.Conn) {
 			continue
 		}
 		msg := buff[:n]
-		fmt.Println(string(msg))
-		ws.Write([]byte(ws.RemoteAddr().String() + ": " + string(msg)))
-		// ws.Write([]byte("thank you for the message!"))
+
+		var msgData MessageData
+		err = json.Unmarshal(msg, &msgData)
+		if err != nil {
+			fmt.Println("Error unmarshalling JSON:", err)
+			continue
+		}
+
+		response := msgData.ClientName + ": " + msgData.Message
+		fmt.Println("Received message - ", response)
+		ws.Write([]byte(response))
 	}
 }
 

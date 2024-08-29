@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -13,6 +14,7 @@ var serverURL string = "ws://localhost:3000/ws"
 
 type Client struct {
 	client_name string
+	client_url  string
 	server_url  string
 	ws          *websocket.Conn
 }
@@ -20,6 +22,7 @@ type Client struct {
 func NewClient(client_name string, server_url string) *Client {
 	return &Client{
 		client_name: client_name,
+		client_url:  "http://" + client_name + ":8000/",
 		server_url:  server_url,
 	}
 }
@@ -27,7 +30,7 @@ func NewClient(client_name string, server_url string) *Client {
 func (c *Client) Connect() error {
 	// Connect to the WebSocket server
 	var err error
-	c.ws, err = websocket.Dial(c.server_url, "", c.client_name)
+	c.ws, err = websocket.Dial(c.server_url, "", c.client_url)
 	if err != nil {
 		return err
 	}
@@ -36,12 +39,32 @@ func (c *Client) Connect() error {
 	return nil
 }
 
+type MessageData struct {
+	ClientName string `json:"clientName"`
+	Message    string `json:"message"`
+}
+
 func (c *Client) SendMessage(message string) error {
-	_, err := c.ws.Write([]byte(message))
+
+	msgData := MessageData{
+		ClientName: c.client_name,
+		Message:    message,
+	}
+
+	// Convert the struct to JSON
+	jsonData, err := json.Marshal(msgData)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return err
+	}
+
+	// Convert the JSON bytes to a string
+	jsonMessage := string(jsonData)
+
+	_, err = c.ws.Write([]byte(jsonMessage))
 	if err != nil {
 		return err
 	}
-	// fmt.Println("Message sent to the server:", message)
 	return nil
 }
 
@@ -70,8 +93,6 @@ func main() {
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
-	// newClient := NewClient("http://this-is-a-new-client:8000/", serverURL)
-	// newClient.Run()
 }
 
 type (
@@ -114,8 +135,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Step 1: Entering client name
 			if m.step == 0 {
 				clientName := m.textInput.Value()
-				clientURI := "http://" + clientName + ":8000/"
-				m.client = NewClient(clientURI, serverURL)
+				m.client = NewClient(clientName, serverURL)
 
 				if err := m.client.Connect(); err != nil {
 					m.err = err
@@ -174,15 +194,13 @@ func (m model) View() string {
 	switch m.step {
 	case 0:
 		return fmt.Sprintf(
-			"Enter your client name:\n\n%s\n\n%s",
+			"Enter your client name:\n\n%s",
 			m.textInput.View(),
-			"(esc to quit)",
 		)
 	case 1:
 		return fmt.Sprintf(
-			"Send a message to the server!\n\n%s\n\n%s",
+			"Send a message to the server!\n\n%s\n\n",
 			m.textInput.View(),
-			"(esc to quit)",
 		)
 	default:
 		return "Something went wrong."
