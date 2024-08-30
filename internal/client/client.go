@@ -7,10 +7,20 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/net/websocket"
 )
 
 var serverURL string = "ws://localhost:3000/ws"
+
+// Define the border style using lipgloss
+var borderStyle = lipgloss.NewStyle().
+	Border(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("30")).
+	Padding(1, 2).
+	Width(70).
+	Height(10).
+	Align(lipgloss.Left)
 
 type Client struct {
 	client_name string
@@ -188,21 +198,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.err != nil {
-		return fmt.Sprintf("An error occurred: %v\n", m.err)
+		return borderStyle.Render(
+			fmt.Sprintf("An error occurred: %v\n", m.err),
+		)
 	}
 
 	switch m.step {
 	case 0:
-		return fmt.Sprintf(
+		return borderStyle.Render(fmt.Sprintf(
 			"Enter your client name:\n\n%s",
 			m.textInput.View(),
-		)
+		))
 	case 1:
-		return fmt.Sprintf(
+		return borderStyle.Render(fmt.Sprintf(
 			"Send a message to the server!\n\n%s\n\n",
 			m.textInput.View(),
-		)
+		))
 	default:
-		return "Something went wrong."
+		return borderStyle.Render("Something went wrong.")
 	}
 }
