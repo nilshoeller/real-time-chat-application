@@ -12,9 +12,9 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// GLOBAL VARS //////////////////////////////////////////////////////
 var serverURL string = "ws://localhost:3000/ws"
 
-// Define the border style using lipgloss
 var borderStyle = lipgloss.NewStyle().
 	Border(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("30")).
@@ -23,6 +23,8 @@ var borderStyle = lipgloss.NewStyle().
 	Height(10).
 	Align(lipgloss.Left)
 
+// //////////////////////////////////////////////////////////////////
+// STRUCTS /////////////////////////////////////////////////////////
 type Client struct {
 	client_name string
 	client_url  string
@@ -30,6 +32,13 @@ type Client struct {
 	ws          *websocket.Conn
 }
 
+type MessageData struct {
+	ClientName string `json:"clientName"`
+	Message    string `json:"message"`
+}
+
+// //////////////////////////////////////////////////////////////////
+// SERVER FUNCS /////////////////////////////////////////////////////
 func NewClient(client_name string, server_url string) *Client {
 	return &Client{
 		client_name: client_name,
@@ -48,11 +57,6 @@ func (c *Client) Connect() error {
 
 	// fmt.Println("Client connected to the server.")
 	return nil
-}
-
-type MessageData struct {
-	ClientName string `json:"clientName"`
-	Message    string `json:"message"`
 }
 
 func (c *Client) SendMessage(message string) error {
@@ -99,6 +103,8 @@ func (c *Client) Run() {
 	c.Close()
 }
 
+// //////////////////////////////////////////////////////////////////
+// MAIN /////////////////////////////////////////////////////////////
 func main() {
 	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
@@ -106,10 +112,13 @@ func main() {
 	}
 }
 
+// //////////////////////////////////////////////////////////////////
 type (
 	errMsg error
 )
 
+// //////////////////////////////////////////////////////////////////
+// BUBBLETEA ////////////////////////////////////////////////////////
 type model struct {
 	textInput textinput.Model
 	err       error
@@ -134,6 +143,8 @@ func initialModel() model {
 	}
 }
 
+// //////////////////////////////////////////////////////////////////
+// INIT /////////////////////////////////////////////////////////////
 func (m model) Init() tea.Cmd {
 	// return textinput.Blink
 	return tea.Batch(
@@ -142,6 +153,8 @@ func (m model) Init() tea.Cmd {
 	)
 }
 
+// //////////////////////////////////////////////////////////////////
+// UPDATE ///////////////////////////////////////////////////////////
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -183,6 +196,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case tea.KeyCtrlC, tea.KeyEsc:
+			m.client.Close()
 			return m, tea.Quit
 		}
 
@@ -200,6 +214,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// //////////////////////////////////////////////////////////////////
+// VIEW /////////////////////////////////////////////////////////////
 func (m model) View() string {
 	if m.err != nil {
 		return borderStyle.Render(
@@ -227,7 +243,8 @@ func (m model) View() string {
 	return borderStyle.Render(viewContent)
 }
 
-// A command to listen for incoming messages asynchronously
+// //////////////////////////////////////////////////////////////////
+// HELPER FUNCS /////////////////////////////////////////////////////
 func (m model) listenForMessages() tea.Cmd {
 	return func() tea.Msg {
 		receivedMsg, err := m.client.ReceiveMessage()
@@ -237,3 +254,5 @@ func (m model) listenForMessages() tea.Cmd {
 		return receivedMsg
 	}
 }
+
+// //////////////////////////////////////////////////////////////////
