@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -114,6 +115,7 @@ type model struct {
 	err       error
 	client    *Client
 	step      int
+	messages  []string
 }
 
 func initialModel() model {
@@ -128,11 +130,16 @@ func initialModel() model {
 		err:       nil,
 		client:    nil,
 		step:      0,
+		messages:  []string{},
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return textinput.Blink
+	// return textinput.Blink
+	return tea.Batch(
+		tea.EnterAltScreen,
+		textinput.Blink,
+	)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -155,7 +162,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step = 1
 				m.textInput.SetValue("")
 				m.textInput.Placeholder = "Enter a message to send..."
-				return m, nil
+				return m, m.listenForMessages()
 			}
 
 			// Step 2: Sending message
@@ -171,20 +178,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.err = err
 				}
 
-				// Optional: receive a message from the server after sending
-				receivedMsg, err := m.client.ReceiveMessage()
-				if err != nil {
-					m.err = err
-				} else {
-					// fmt.Println("Message received from server:", receivedMsg)
-					fmt.Println(receivedMsg)
-				}
+				m.textInput.SetValue("")
 
-				return m, tea.Quit
+				return m, nil
 			}
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		}
+
+	case string:
+		m.messages = append(m.messages, msg)
+		return m, m.listenForMessages()
 
 	// We handle errors just like any other message
 	case errMsg:
@@ -203,18 +207,33 @@ func (m model) View() string {
 		)
 	}
 
+	var viewContent string
 	switch m.step {
 	case 0:
-		return borderStyle.Render(fmt.Sprintf(
+		viewContent = fmt.Sprintf(
 			"Enter your client name:\n\n%s",
 			m.textInput.View(),
-		))
+		)
 	case 1:
-		return borderStyle.Render(fmt.Sprintf(
-			"Send a message to the server!\n\n%s\n\n",
+		messagesView := strings.Join(m.messages, "\n")
+		viewContent = fmt.Sprintf(
+			"Send a message to the server!\n\n%s\n\n%s",
+			messagesView,
 			m.textInput.View(),
-		))
+		)
 	default:
-		return borderStyle.Render("Something went wrong.")
+		viewContent = "Something went wrong."
+	}
+	return borderStyle.Render(viewContent)
+}
+
+// A command to listen for incoming messages asynchronously
+func (m model) listenForMessages() tea.Cmd {
+	return func() tea.Msg {
+		receivedMsg, err := m.client.ReceiveMessage()
+		if err != nil {
+			return err
+		}
+		return receivedMsg
 	}
 }
